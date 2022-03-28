@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "gnchaind.fullname" . }}
+  labels:
+    {{- include "gnchaind.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "gnchaind.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "gnchaind.fullname" . }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gnchaind.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gnchaind.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-init
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /root
+              name: data-pvc
+            - mountPath: /root/genesis.json
+              name: genesis
+          command:
+            - "sh"
+            - "-c"
+            - |
+              set -ex
+              if ! [ -f $HOME/.gnchain/config/genesis.json ]; then
+              gnchaind init node
+              end
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            {{- range $name, $port := .Values.service.ports }}
+            - containerPort: {{ $port }}
+              name: {{ $name }}
+            {{- end }}
+#          livenessProbe:
+#            httpGet:
+#              path: /
+#              port: http
+#          readinessProbe:
+#            httpGet:
+#              path: /
+#              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /root
+              name: data-pvc
+      volumes:
+        - name: genesis
+          configMap:
+            name: {{ include "gnchaind.configMapName" . }}
+            items:
+              - key: genesis.json
+                path: genesis.json
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data-pvc
+      spec:
+        accessModes:
+          {{- range .Values.volumeClaimTemplate.accessModes }}
+          - {{ . }}
+        {{- end }}
+        storageClassName: {{ .Values.volumeClaimTemplate.storageClassName }}
+        resources:
+          requests:
+            storage: {{ .Values.volumeClaimTemplate.size }}

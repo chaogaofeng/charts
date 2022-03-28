@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gnchaind.configMapName" . }}
+data:
+  genesis.json: |-
+    {{ .Files.Get "genesis.json" | b64enc }}
