@@ -1,0 +1,15 @@
+# gnchaind node
+
+The gnchain node chart is designed to be a full featured chart for running a gnchaind daemon.
+
+## Deployments
+
+### Basic
+
+The basic install provides a pvc for the datastore and generates temporary secrets for the p2p identify. 
+Therefore deleteing the pod results in loss of these secrets. For this reason we recommend
+that secrets are generated externally and a secret named is supplied.
+
+```
+helm upgrade --install gnchain ./gnchaind
+```

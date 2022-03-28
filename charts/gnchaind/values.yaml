@@ -1,0 +1,192 @@
+# Default values for gnchaind.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: goldnet/gnchaind
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: latest
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  ports:
+    p2p: 26656
+    rpc: 26657
+    grpc: 9090
+    api: 1317
+    prof: 6060
+
+ingress:
+  enabled: true
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host:
+      paths:
+        - path: /api
+          pathType: ImplementationSpecific
+          port: 1317
+        - path: /rpc
+          pathType: ImplementationSpecific
+          port: 26657
+        - path: /grpc
+          pathType: ImplementationSpecific
+          port: 9090
+        - path: /prof
+          pathType: ImplementationSpecific
+          port: 6060
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# 节点使用的存储类
+volumeClaimTemplate:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: standard
+  size: 10Gi
+  
+# chain_file 区块链网络定义文件chain.yaml内容
+chain_file: |-
+  accounts:
+    - name: leader
+      mnemonic: "apology false junior asset sphere puppy upset dirt miracle rice horn spell ring vast wrist crisp snake oak give cement pause swallow barely clever"
+      coin_type: 118
+      algo: sm2
+      # address: gnc1qxcrws5mytpzwkk4tn4dyysw2ru96na3kvhk65
+      coins: ["99999000000ugnc"]
+      roles: ["ROOT_ADMIN"]
+    - name: validator
+      mnemonic: "gossip wheel net riot retreat arrest ozone dragon funny undo bulb visa victory label slim domain network wage suit peanut tattoo text venture answer"
+      coin_type: 118
+      algo: sm2
+      # address: gnc13d59wpwv6swsn8z5xwk4vr2n67q20sps9zzefd
+      coins: ["1000000ugnc"]
+    - address: gnc1ya2ecdjjg8t4p9x40tfyq7d8emnjkes3tllqt3
+      roles: ["ROOT_ADMIN"]
+  validators:
+    - name: validator
+      sef_delegation: "1000000ugnc"
+      commission_rate:
+      commission_max_rate:
+      commission_max_change_rate:
+      min_self_delegation:
+      moniker:
+      identity:
+      website:
+      security_contact:
+      details:
+  init:
+    config:
+      consensus:
+        timeout_commit: "1000ms"
+    app:
+      minimum-gas-prices: "0ugnc"
+    client:
+  genesis:
+    genesis_time: 2022-04-12T05:35:29Z
+    chain_id: gnchain_45-1
+    app_state:
+      permission:
+        params:
+          enabled: false
+      bank:
+        denom_metadata:
+          - description: "base denom of gnc block chain"
+            base: "ugnc"
+            display: "gnc"
+            denom_units:
+              - denom: ugnc
+                exponent: 0
+              - denom: gnc
+                exponent: 6
+            name: "gnc network"
+            symbol: "GNC"
+      crisis:
+        constant_fee:
+          denom: ugnc
+      staking:
+        params:
+          bond_denom: ugnc
+      gov:
+        deposit_params:
+          min_deposit:
+            - denom: ugnc
+              amount: "10000000"
+      mint:
+        minter:
+          inflation: "0.000000000000000000"
+        params:
+          mint_denom: ugnc
+          inflation_rate_change: "0.000000000000000000"
+          inflation_min: "0.000000000000000000"
+# genesis_file 区块链网络创世文件genesis.json内容
+genesis_file:
+#node_key 节点私钥文件node_key.json内容 nodeID: 89e4dcf0caf6725fe58abf072ac77046bd5dd685
+node_key: |-
+  {"priv_key":{"type":"tendermint/PrivKeySm2","value":"Evm4ZgJ5zjRtDiuTkkqVE+AFra4VdFLoNQEoPyvmpJI="}}
+# validator_mnemonic 节点验证人助记词
+validator_mnemonic: "apology false junior asset sphere puppy upset dirt miracle rice horn spell ring vast wrist crisp snake oak give cement pause swallow barely clever"
+# moniker 节点名称
+moniker: node
+# rpc 节点RPC
+rpc: tcp://0.0.0.0:26657
+# persistent_peers 连接的节点列表，nodeID@ip:port
+persistent_peers:

@@ -3,5 +3,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "gnchaind.configMapName" . }}
 data:
+  {{- if .Values.genesis_file }}
   genesis.json: |-
-    {{ .Files.Get "genesis.json" | b64enc }}
+    {{- .Values.genesis_file | nindent 6 }}
+  {{- end }}

@@ -67,3 +67,10 @@ Create the name for the configmap to use
 {{- define "gnchaind.configMapName" -}}
 {{ printf "%s-configmap" .Release.Name }}
 {{- end -}}
+
+{{/*
+Create the name for the secret to use
+*/}}
+{{- define "gnchaind.secretName" -}}
+{{ printf "%s-secret" .Release.Name }}
+{{- end -}}

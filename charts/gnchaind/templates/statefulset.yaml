@@ -28,7 +28,7 @@ spec:
       serviceAccountName: {{ include "gnchaind.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      containers:
+      initContainers:
         - name: {{ .Chart.Name }}-init
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -37,23 +37,69 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - mountPath: /root
+            - mountPath: /root/.gnchain
               name: data-pvc
-            - mountPath: /root/genesis.json
-              name: genesis
+              subPath: .gnchain
+            - mountPath: /root/config
+              name: config
+            - mountPath: /root/secret
+              name: secret
+          env:
+            - name: RECOVER
+              {{- if .Values.validator_mnemonic }}
+              valueFrom:
+                secretKeyRef:
+                  name:  {{ include "gnchaind.secretName" . }}
+                  key: validator_mnemonic
+              {{- end }}
+            - name: MONIKER
+              value: {{ .Values.moniker }}
           command:
             - "sh"
             - "-c"
             - |
               set -ex
-              if ! [ -f $HOME/.gnchain/config/genesis.json ]; then
-              gnchaind init node
-              end
+              if ! [ -f /root/.gnchain/config/genesis.json ]; then
+                if [ -n "$RECOVER" ]; then
+                  echo "$RECOVER" | gnchaind init "$MONIKER" --recover
+                else
+                  gnchaind init "$MONIKER"
+                fi
+
+                if ! [ -f /root/config/genesis.json ]; then
+                  gnchaind chain /root/secret/chain.yaml --home chain
+                  cp chain/config/genesis.json /root/.gnchain/config/genesis.json
+                  rm -rf chain
+                else 
+                  cp /root/config/genesis.json /root/.gnchain/config/genesis.json
+                fi 
+
+                if [ -f /root/secret/node_key.json ]; then
+                  cp /root/secret/node_key.json /root/.gnchain/config/node_key.json
+                fi 
+              fi
+      containers:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: GNCHAIND_RPC_MONIKER
+              value: {{ .Values.moniker }}
+            - name: GNCHAIND_RPC_LADDR
+              value: {{ .Values.rpc }}
+            - name: GNCHAIND_P2P_PERSISTENT_PEERS
+              value: {{ .Values.persistent_peers }}
+            - name: GNCHAIND_P2P_ADDR_BOOK_STRICT
+              value: "false"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              set -e
+              sed -i 's/enable = false/enable = true/' /root/.gnchain/config/app.toml
+              gnchaind start
           ports:
             {{- range $name, $port := .Values.service.ports }}
             - containerPort: {{ $port }}
@@ -73,12 +119,12 @@ spec:
             - mountPath: /root
               name: data-pvc
       volumes:
-        - name: genesis
+        - name: config
           configMap:
             name: {{ include "gnchaind.configMapName" . }}
-            items:
-              - key: genesis.json
-                path: genesis.json
+        - name: secret
+          secret:
+            secretName: {{ include "gnchaind.secretName" . }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
