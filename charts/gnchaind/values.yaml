@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: goldnet/gnchaind
+  repository: glodnet/gnchaind
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: latest
@@ -48,23 +48,24 @@ service:
 ingress:
   enabled: true
   className: ""
-  annotations: {}
+  annotations:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
   hosts:
     - host:
       paths:
-        - path: /api
-          pathType: ImplementationSpecific
+        - path: /api(/|$)(.*)
+          pathType: Prefix
           port: 1317
-        - path: /rpc
-          pathType: ImplementationSpecific
+        - path: /rpc(/|$)(.*)
+          pathType: Prefix
           port: 26657
-        - path: /grpc
-          pathType: ImplementationSpecific
+        - path: /grpc(/|$)(.*)
+          pathType: Prefix
           port: 9090
-        - path: /prof
-          pathType: ImplementationSpecific
+        - path: /prof(/|$)(.*)
+          pathType: Prefix
           port: 6060
   tls: []
   #  - secretName: chart-example-tls
@@ -100,7 +101,7 @@ affinity: {}
 volumeClaimTemplate:
   accessModes:
     - ReadWriteOnce
-  storageClassName: standard
+  storageClassName: alicloud-nas-subpath
   size: 10Gi
   
 # chain_file 区块链网络定义文件chain.yaml内容
@@ -119,8 +120,6 @@ chain_file: |-
       algo: sm2
       # address: gnc13d59wpwv6swsn8z5xwk4vr2n67q20sps9zzefd
       coins: ["1000000ugnc"]
-    - address: gnc1ya2ecdjjg8t4p9x40tfyq7d8emnjkes3tllqt3
-      roles: ["ROOT_ADMIN"]
   validators:
     - name: validator
       sef_delegation: "1000000ugnc"
@@ -183,7 +182,7 @@ genesis_file:
 node_key: |-
   {"priv_key":{"type":"tendermint/PrivKeySm2","value":"Evm4ZgJ5zjRtDiuTkkqVE+AFra4VdFLoNQEoPyvmpJI="}}
 # validator_mnemonic 节点验证人助记词
-validator_mnemonic: "apology false junior asset sphere puppy upset dirt miracle rice horn spell ring vast wrist crisp snake oak give cement pause swallow barely clever"
+validator_mnemonic: "gossip wheel net riot retreat arrest ozone dragon funny undo bulb visa victory label slim domain network wage suit peanut tattoo text venture answer"
 # moniker 节点名称
 moniker: node
 # rpc 节点RPC

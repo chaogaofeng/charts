@@ -98,7 +98,6 @@ spec:
             - "-c"
             - |
               set -e
-              sed -i 's/enable = false/enable = true/' /root/.gnchain/config/app.toml
               gnchaind start
           ports:
             {{- range $name, $port := .Values.service.ports }}
