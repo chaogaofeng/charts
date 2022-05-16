@@ -52,8 +52,6 @@ spec:
                   name:  {{ include "gnchaind.secretName" . }}
                   key: validator_mnemonic
               {{- end }}
-            - name: MONIKER
-              value: {{ .Values.moniker }}
           command:
             - "sh"
             - "-c"
@@ -63,7 +61,7 @@ spec:
                 if [ -n "$RECOVER" ]; then
                   echo "$RECOVER" | gnchaind init "$MONIKER" --recover
                 else
-                  gnchaind init "$MONIKER"
+                  gnchaind init mynode
                 fi
 
                 if ! [ -f /root/config/genesis.json ]; then
@@ -85,7 +83,9 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: GNCHAIND_RPC_MONIKER
+            - name: NODE_HOSTS
+              value: {{ .Values.other_nodes }}
+            - name: GNCHAIND_MONIKER
               value: {{ .Values.moniker }}
             - name: GNCHAIND_RPC_LADDR
               value: {{ .Values.rpc }}
@@ -93,12 +93,16 @@ spec:
               value: {{ .Values.persistent_peers }}
             - name: GNCHAIND_P2P_ADDR_BOOK_STRICT
               value: "false"
+            - name: GNCHAIND_API_ENABLE
+              value: "true"
+            - name: GNCHAIND_API_ENABLED_UNSAFE_CORS
+              value: "true"
           command:
             - "sh"
             - "-c"
             - |
-              set -e
-              gnchaind start
+              /wait
+              /run.sh
           ports:
             {{- range $name, $port := .Values.service.ports }}
             - containerPort: {{ $port }}

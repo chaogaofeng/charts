@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: glodnet/gnchaind
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
   tag: latest
 
@@ -179,13 +179,14 @@ chain_file: |-
 # genesis_file 区块链网络创世文件genesis.json内容
 genesis_file:
 #node_key 节点私钥文件node_key.json内容 nodeID: 89e4dcf0caf6725fe58abf072ac77046bd5dd685
-node_key: |-
-  {"priv_key":{"type":"tendermint/PrivKeySm2","value":"Evm4ZgJ5zjRtDiuTkkqVE+AFra4VdFLoNQEoPyvmpJI="}}
+node_key: 
 # validator_mnemonic 节点验证人助记词
 validator_mnemonic: "gossip wheel net riot retreat arrest ozone dragon funny undo bulb visa victory label slim domain network wage suit peanut tattoo text venture answer"
 # moniker 节点名称
 moniker: node
 # rpc 节点RPC
 rpc: tcp://0.0.0.0:26657
+# other_nodes 其他节点IP列表，自动获取nodeID并填充到persistent_peers
+other_nodes:
 # persistent_peers 连接的节点列表，nodeID@ip:port
 persistent_peers:
